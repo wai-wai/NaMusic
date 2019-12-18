@@ -27,7 +27,7 @@ Widget::Widget(QWidget *parent)
     this->setStyleSheet("QWidget#Widget{border-image: url(:/new/prefix1/back.jpg);}");
 
    /* 播放器 */
-    mPlayer = new QMediaPlayer(this);
+    //mPlayer = new QMediaPlayer(this);
 }
 
 Widget::~Widget()
@@ -294,6 +294,7 @@ void Widget::playMp3(){
     }else{
         stopMp3();
         senderObj->setText("播放");
+
         ok = false;
     }
 }
@@ -369,15 +370,18 @@ void Widget::getDownLink(QByteArray data){
 }
 
 void Widget::playMp3ByUrl(QString url){
-    //qDebug()<<"url: "<<url;
+    playUrl = url;
+    mPlayer = new QMediaPlayer();
     /* player */
-    mPlayer->setMedia(QUrl::fromLocalFile(url));
+    mPlayer->setMedia(QUrl::fromLocalFile(playUrl));
     mPlayer->play();
 }
 
 void Widget::stopMp3(){
     /* stop player */
     mPlayer->stop();
+    delete  mPlayer;
+    //QFile::remove(playUrl);
 }
 
 void Widget::setClipboard (QString url){

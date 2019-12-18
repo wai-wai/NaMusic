@@ -39,22 +39,20 @@ QByteArray  urlOp::getResponseCookieByKey(const QByteArray& key)
 {
     return responseCookie[key];
 }
-QByteArray urlOp::getUrlData()
-{
+
+QByteArray urlOp::getUrlData(){
     return urlData;
 }
-int urlOp::getResponseStatus()
-{
+int urlOp::getResponseStatus(){
     return status;
 }
-QString urlOp::getErrorString()
-{
+
+QString urlOp::getErrorString(){
     return errString;
 }
 
 
-void urlOp::replyFinished(QNetworkReply *reply)
-{
+void urlOp::replyFinished(QNetworkReply *reply){
     status = reply->error();
     //qDebug() << status;
     errString = reply->errorString();
@@ -68,7 +66,6 @@ void urlOp::replyFinished(QNetworkReply *reply)
         {
             tmp = responseRawHeader.at(i);
             responseCookie.insert(tmp, reply->rawHeader(tmp));
-            //qDebug() << tmp  << ":" <<reply->rawHeader(tmp);
         }
         //qDebug() << "getFinished";
 
@@ -76,7 +73,6 @@ void urlOp::replyFinished(QNetworkReply *reply)
     }
     else
         emit this->error((int)reply->error());
-
 
     reply->close();
 }

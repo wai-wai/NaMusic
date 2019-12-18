@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QStandardPaths>
 #include <QFile>
-#include "down/urlop.h"
+#include "down/urlOp.h"
 #include <QDir>
 
 class downTempFile : public QObject
@@ -20,10 +20,10 @@ private slots:
     void testError(int);
     //void loadProgress(qint64 bytesSent, qint64 bytesTotal);
 private:
-    urlOp *Downloader;
+     urlOp *Downloader;
      QString downName;
      QString downType;
-    QMap<QString, QString> requestheader;
+     QMap<QString, QString> requestheader;
 
 };
 

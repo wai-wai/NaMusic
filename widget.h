@@ -35,7 +35,7 @@
 
 #include <QMediaPlayer>
 #include "downtempfile.h"
-
+#include <QMetaType>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {

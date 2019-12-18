@@ -11,3 +11,5 @@
     QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation) + "/music/";
 
 # 修改界面缩放问题
+
+# 修复下载试听
