@@ -34,6 +34,7 @@
 #include <QBrush>
 
 #include <QMediaPlayer>
+#include "downtempfile.h"
 
 
 QT_BEGIN_NAMESPACE
@@ -43,6 +44,7 @@ namespace Ui {
 QT_END_NAMESPACE
 
 class searchM;
+class downTempFile;
 
 class Widget : public QWidget
 {
@@ -72,6 +74,7 @@ private slots:
 private:
     Ui::Widget *ui;
     searchM    findM;
+    downTempFile    downM;
     QByteArray musicData;
     QTableWidget *tabW;
     QString     curMusicName;
@@ -80,6 +83,6 @@ private:
     int          BtnNum;
 
     /* 播放mp3 */
-
+    QMediaPlayer    *mPlayer;
 };
 #endif // WIDGET_H

@@ -16,11 +16,15 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    down/urlop.cpp \
+    downtempfile.cpp \
     main.cpp \
     searchm.cpp \
     widget.cpp
 
 HEADERS += \
+    down/urlop.h \
+    downtempfile.h \
     searchm.h \
     widget.h
 

@@ -10,6 +10,9 @@ Widget::Widget(QWidget *parent)
     connect(&findM, &searchM::getDownLink, this, &Widget::getDownLink);
 
     connect(ui->musicName, &QLineEdit::returnPressed, this, &Widget::on_search_clicked);
+
+    connect(&downM,&downTempFile::downFinish, this, &Widget::playMp3ByUrl);
+
     tabW = new QTableWidget(ui->musicList);
     tabW->hide();
     //ui->pushButton->hide();
@@ -18,6 +21,9 @@ Widget::Widget(QWidget *parent)
 
     this->setAttribute(Qt::WA_StyledBackground);
    this->setStyleSheet("QWidget#Widget{border-image: url(:/new/prefix1/back.jpg);}");
+
+   /* 播放器 */
+    mPlayer = new QMediaPlayer(this);
 }
 
 Widget::~Widget()
@@ -352,19 +358,22 @@ void Widget::getDownLink(QByteArray data){
          }else if(BtnNum == 0){
              /* 启动播放器试听 */
              /* 播放rul */
-             playMp3ByUrl(url);
+            downM.downMp3(url, curMusicName,mtype);
          }
         /* 发送给下载线程 */
     }while(0);
-
 }
 
 void Widget::playMp3ByUrl(QString url){
-
+    //qDebug()<<"url: "<<url;
+    /* player */
+    mPlayer->setMedia(QUrl::fromLocalFile(url));
+    mPlayer->play();
 }
 
 void Widget::stopMp3(){
-
+    /* stop player */
+    mPlayer->stop();
 }
 
 void Widget::setClipboard (QString url){
