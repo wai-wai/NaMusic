@@ -33,6 +33,9 @@
 #include <QPalette>
 #include <QBrush>
 
+#include <QMediaPlayer>
+
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
     class Widget;
@@ -53,20 +56,30 @@ public:
 
 private:
     void showTab(QJsonArray, int row);
+    void playMp3ByUrl(QString);
+    void stopMp3();
 private slots:
     void on_search_clicked();
     void getRData(QByteArray);
     void getDownLink(QByteArray);
+#if 0
     void on_pushButton_clicked();
-
+#endif
     void clickDownBtn();
-
+    void playMp3();
     void setClipboard (QString url);
+
 private:
     Ui::Widget *ui;
     searchM    findM;
     QByteArray musicData;
     QTableWidget *tabW;
     QString     curMusicName;
+    QString     playUrl;
+    int          maxLen;
+    int          BtnNum;
+
+    /* 播放mp3 */
+
 };
 #endif // WIDGET_H

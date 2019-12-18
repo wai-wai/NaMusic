@@ -12,15 +12,12 @@ Widget::Widget(QWidget *parent)
     connect(ui->musicName, &QLineEdit::returnPressed, this, &Widget::on_search_clicked);
     tabW = new QTableWidget(ui->musicList);
     tabW->hide();
-    ui->pushButton->hide();
+    //ui->pushButton->hide();
     setWindowIcon(QIcon(":/new/prefix1/Music.ico"));
-    setWindowTitle("音乐搜索. by smaller V1.0");
-     /* 设置背景色 */
-    QPixmap pix(":/new/prefix1/back.jpg");
-    QPalette palette;
-    palette.setBrush(backgroundRole(), QBrush(pix));
-    setPalette(palette);
-    //ui->search->setStyleSheet("QPushButton#search:{}")
+    setWindowTitle("音乐搜索. by smaller V1.1");
+
+    this->setAttribute(Qt::WA_StyledBackground);
+   this->setStyleSheet("QWidget#Widget{border-image: url(:/new/prefix1/back.jpg);}");
 }
 
 Widget::~Widget()
@@ -128,9 +125,10 @@ void Widget::showTab(QJsonArray data,int row){
             <<"演唱"\
             <<"时间"\
             <<"音质 | 大小"\
+            <<"试听"\
             <<"下载" \
            <<"id";
-
+    maxLen = headList.length();
     tabW->setColumnCount(headList.length());
     tabW->setRowCount(row);
     /* 隐藏id列 */
@@ -144,6 +142,7 @@ void Widget::showTab(QJsonArray data,int row){
     headerView->setSectionResizeMode(2,QHeaderView::Stretch);
     headerView->setSectionResizeMode(3,QHeaderView::Stretch);
     headerView->setSectionResizeMode(4,QHeaderView::Stretch);
+    headerView->setSectionResizeMode(5,QHeaderView::Stretch);
     tabW->setHorizontalHeaderLabels(headList);
 
     /* 解析json */
@@ -218,14 +217,19 @@ void Widget::showTab(QJsonArray data,int row){
                     QString::number(sizeM);
             list<< info;
         }
+
+
         QComboBox *pMusic = new QComboBox();
         pMusic->addItems(list);
-
         tabW->setCellWidget(i,3,pMusic);
+
+        QPushButton *playBtn = new QPushButton("播放");
+        connect(playBtn, &QPushButton::clicked, this, &Widget::playMp3);
+        tabW->setCellWidget(i, 4, playBtn);
 
         QPushButton *donwBtn = new QPushButton("复制下载链接");
         connect(donwBtn, &QPushButton::clicked, this, &Widget::clickDownBtn);
-        tabW->setCellWidget(i, 4, donwBtn);
+        tabW->setCellWidget(i, maxLen-2, donwBtn);
 
         QTableWidgetItem *idIteam = new QTableWidgetItem();
          idIteam->setFlags(Qt::NoItemFlags);
@@ -239,9 +243,7 @@ void Widget::showTab(QJsonArray data,int row){
 
 void Widget::clickDownBtn(){
     QPushButton *senderObj = qobject_cast<QPushButton*>(sender());
-
     if(senderObj == nullptr) return;
-
     QModelIndex index = tabW->indexAt(QPoint(senderObj->frameGeometry().x(),senderObj->frameGeometry().y()));
 
     /* 通过索引 获取对应的 */
@@ -249,26 +251,51 @@ void Widget::clickDownBtn(){
    //tabW->cellWidget()
     QComboBox *curBox = qobject_cast<QComboBox* > (tabW->cellWidget(index.row(),3));
     /* 取出音质 */
-
     QString  pStr = curBox->currentText().trimmed().simplified().split("|").at(0);
-    qDebug()<<pStr;
     /* 取出 id */
-    QString idStr = tabW->item(index.row(),5)->text();
+    QString idStr = tabW->item(index.row(),maxLen-1)->text();
     curMusicName = tabW->item(index.row(),0)->text();
     /* 将音质 id设置过去 直接获取下载链接 */
+    BtnNum = 1;
     findM.findDownLink(idStr,pStr.trimmed().simplified());
 
 }
 
+void Widget::playMp3(){
+    static bool ok = false;
+
+    QPushButton *senderObj = qobject_cast<QPushButton*>(sender());
+    if(senderObj == nullptr) return;
+    QModelIndex index = tabW->indexAt(QPoint(senderObj->frameGeometry().x(),senderObj->frameGeometry().y()));
+
+    /* 播放按钮改 暂停 */
+    if(ok == false){
+        QComboBox *curBox = qobject_cast<QComboBox* > (tabW->cellWidget(index.row(),3));
+        /* 取出最低音质试听 */
+        QString pStr = curBox->itemText(curBox->count() -1 ).trimmed().simplified().split("|").at(0);
+
+        /* 取出 id */
+        QString idStr = tabW->item(index.row(),maxLen-1)->text();
+        curMusicName = tabW->item(index.row(),0)->text();
+        BtnNum = 0;
+        findM.findDownLink(idStr,pStr.trimmed().simplified());
+        senderObj->setText("暂停");
+        ok = true;
+    }else{
+        stopMp3();
+        senderObj->setText("播放");
+        ok = false;
+    }
+}
+
+#if 0
 void Widget::on_pushButton_clicked()
 {
     QString downPath = QFileDialog::getExistingDirectory(this, "请选择文件路径", "D:/");
     if(downPath.isEmpty()) return;
-
     ui->downPath->setText(downPath);
 }
-
-
+#endif
 void Widget::getDownLink(QByteArray data){
     /* 解析json */
     musicData.clear();
@@ -319,15 +346,32 @@ void Widget::getDownLink(QByteArray data){
          mtype = rootArray.at(0).toObject().value("type").toString();
 
          url += ("?filename=" + QUrl::toPercentEncoding(curMusicName) + "&downloadtype=" + mtype);
-         setClipboard(url);
+
+         if(BtnNum == 1){
+             setClipboard(url);
+         }else if(BtnNum == 0){
+             /* 启动播放器试听 */
+             /* 播放rul */
+             playMp3ByUrl(url);
+         }
         /* 发送给下载线程 */
     }while(0);
 
 }
 
+void Widget::playMp3ByUrl(QString url){
+
+}
+
+void Widget::stopMp3(){
+
+}
+
 void Widget::setClipboard (QString url){
     QClipboard *clicpboard = QApplication::clipboard();
-
     clicpboard->setText(url);
 }
+
+
+
 

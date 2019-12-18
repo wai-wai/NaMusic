@@ -15,11 +15,10 @@
 const QString url0= "https://api.imjad.cn/cloudmusic/?type=search&search_type=1&limit=100&s=";
 const QString url1 = "&offset=0";/* offset每次获取30个 可用于计算总共多少 */
 
+#if 0
 const QString url2 = "https://api.imjad.cn/cloudmusic/?type=detail&id=";
-
 const QString url3 = "https://api.imjad.cn/cloudmusic/?type=song&id=168277&br=128000";
-
-
+#endif
 
 class searchM : public QObject
 {
