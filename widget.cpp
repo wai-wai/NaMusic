@@ -12,15 +12,19 @@ Widget::Widget(QWidget *parent)
     connect(ui->musicName, &QLineEdit::returnPressed, this, &Widget::on_search_clicked);
 
     connect(&downM,&downTempFile::downFinish, this, &Widget::playMp3ByUrl);
+    QHBoxLayout *hLayout = new QHBoxLayout();
 
-    tabW = new QTableWidget(ui->musicList);
+    tabW = new QTableWidget();
+    hLayout->addWidget(tabW);
+    ui->musicList->setLayout(hLayout);
+
     tabW->hide();
     //ui->pushButton->hide();
     setWindowIcon(QIcon(":/new/prefix1/Music.ico"));
     setWindowTitle("音乐搜索. by smaller V1.1");
 
     this->setAttribute(Qt::WA_StyledBackground);
-   this->setStyleSheet("QWidget#Widget{border-image: url(:/new/prefix1/back.jpg);}");
+    this->setStyleSheet("QWidget#Widget{border-image: url(:/new/prefix1/back.jpg);}");
 
    /* 播放器 */
     mPlayer = new QMediaPlayer(this);
