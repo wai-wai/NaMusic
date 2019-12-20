@@ -39,6 +39,7 @@ Widget::Widget(QWidget *parent)
     ui->lastBtn->hide();
 */
     ui->nextWidget->hide();
+    mPlayer = nullptr;
 }
 
 Widget::~Widget()
@@ -408,6 +409,7 @@ void Widget::stopMp3(){
     /* stop player */
     mPlayer->stop();
     delete  mPlayer;
+    mPlayer = nullptr;
     playEnable = false;
     ui->playBtn->setText("播放");
 }
@@ -508,9 +510,11 @@ void Widget::on_lastBtn_clicked()
 /* 播放暂停公用 */
 void Widget::on_playBtn_clicked()
 {
+    if(mPlayer == nullptr) return;
     /* stop player */
     mPlayer->stop();
     delete  mPlayer;
+    mPlayer = nullptr;
     playEnable = false;
     ui->playBtn->setText("播放");
 }
