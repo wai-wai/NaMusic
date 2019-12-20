@@ -12,6 +12,8 @@ Widget::Widget(QWidget *parent)
     connect(ui->musicName, &QLineEdit::returnPressed, this, &Widget::on_search_clicked);
 
     connect(&downM,&downTempFile::downFinish, this, &Widget::playMp3ByUrl);
+    connect(&downM,&downTempFile::downError, this, &Widget::downError);
+
     QHBoxLayout *hLayout = new QHBoxLayout();
 
     tabW = new QTableWidget();
@@ -28,10 +30,14 @@ Widget::Widget(QWidget *parent)
 
    /* 播放器 */
     //mPlayer = new QMediaPlayer(this);
+
+    /* 初始化 数据库 */
+    musicDb = new rwSqlite(mDb,this);
 }
 
 Widget::~Widget()
 {
+    delete musicDb;
     delete ui;
 }
 
@@ -234,7 +240,7 @@ void Widget::showTab(QJsonArray data,int row){
         tabW->setCellWidget(i,3,pMusic);
 
         QPushButton *playBtn = new QPushButton("播放");
-        connect(playBtn, &QPushButton::clicked, this, &Widget::playMp3);
+        connect(playBtn, &QPushButton::clicked, this, &Widget::playMusic);
         tabW->setCellWidget(i, 4, playBtn);
 
         QPushButton *donwBtn = new QPushButton("复制下载链接");
@@ -246,7 +252,6 @@ void Widget::showTab(QJsonArray data,int row){
         idIteam->setText(QString::number(data.at(i).toObject().value("id").toInt()));
         tabW->setItem(i,headList.length()-1,idIteam);
     }
-
 
     tabW->show();
 }
@@ -265,13 +270,16 @@ void Widget::clickDownBtn(){
     /* 取出 id */
     QString idStr = tabW->item(index.row(),maxLen-1)->text();
     curMusicName = tabW->item(index.row(),0)->text();
+
+    /* 取出 songer = curSonger */
+    curSonger = tabW->item(index.row(),1)->text();
     /* 将音质 id设置过去 直接获取下载链接 */
     BtnNum = 1;
     findM.findDownLink(idStr,pStr.trimmed().simplified());
 
 }
 
-void Widget::playMp3(){
+void Widget::playMusic(){
     static bool ok = false;
 
     QPushButton *senderObj = qobject_cast<QPushButton*>(sender());
@@ -286,7 +294,12 @@ void Widget::playMp3(){
 
         /* 取出 id */
         QString idStr = tabW->item(index.row(),maxLen-1)->text();
+
         curMusicName = tabW->item(index.row(),0)->text();
+
+        /* 取出 songer */
+        curSonger = tabW->item(index.row(),1)->text();
+
         BtnNum = 0;
         findM.findDownLink(idStr,pStr.trimmed().simplified());
         senderObj->setText("暂停");
@@ -299,27 +312,18 @@ void Widget::playMp3(){
     }
 }
 
-#if 0
-void Widget::on_pushButton_clicked()
-{
-    QString downPath = QFileDialog::getExistingDirectory(this, "请选择文件路径", "D:/");
-    if(downPath.isEmpty()) return;
-    ui->downPath->setText(downPath);
-}
-#endif
 void Widget::getDownLink(QByteArray data){
     /* 解析json */
     musicData.clear();
     musicData = data;
-    QString url;
-    QString mtype;
+    curDownUrl.clear();
     do{
         /*
          * 判断返回值 200
          * data 是jsonArray  单独处理
         */
         if(musicData.isEmpty()) break;
-
+        currentMd5.clear();
         QJsonParseError jsonError;
         QJsonDocument rootDoc(QJsonDocument::fromJson(musicData,&jsonError));
         if(jsonError.error != QJsonParseError::NoError ){
@@ -353,35 +357,67 @@ void Widget::getDownLink(QByteArray data){
              QMessageBox::information(this,"getDownLink,提示4:","获取失败!\n");
              break;
          }
-         url = rootArray.at(0).toObject().value("url").toString();
-         mtype = rootArray.at(0).toObject().value("type").toString();
+         curDownUrl = rootArray.at(0).toObject().value("url").toString();
+         curMType = rootArray.at(0).toObject().value("type").toString();
+         currentMd5 = rootArray.at(0).toObject().value("md5").toString();
 
-         url += ("?filename=" + QUrl::toPercentEncoding(curMusicName) + "&downloadtype=" + mtype);
+         curDownUrl += ("?filename=" + QUrl::toPercentEncoding(curMusicName) + "&downloadtype=" + curMType);
 
          if(BtnNum == 1){
-             setClipboard(url);
+             setClipboard(curDownUrl);
          }else if(BtnNum == 0){
              /* 启动播放器试听 */
              /* 播放rul */
-            downM.downMp3(url, curMusicName,mtype);
+             /* 需要添加md5判断以后在进行下载 */
+            if(musicDb->findMd5(currentMd5, curMusicName + "-" + curSonger)){
+                playEnable = true;
+                playMp3();
+                break;
+            }
+            downM.downMp3(curDownUrl, curMusicName + "-" + curSonger, curMType);
          }
         /* 发送给下载线程 */
     }while(0);
 }
 
-void Widget::playMp3ByUrl(QString url){
-    playUrl = url;
-    mPlayer = new QMediaPlayer();
-    /* player */
-    mPlayer->setMedia(QUrl::fromLocalFile(playUrl));
-    mPlayer->play();
+void Widget::playMp3ByUrl(QString ){
+    /* 下载成功 添加md5 跟 musicname */
+    musicDb->addMd5(currentMd5, curMusicName + "-" + curSonger);
+    playEnable = true;
+    playMp3();
 }
+
+void Widget::downError(int){
+    playEnable = false;
+}
+
 
 void Widget::stopMp3(){
     /* stop player */
     mPlayer->stop();
     delete  mPlayer;
-    //QFile::remove(playUrl);
+    playEnable = false;
+}
+
+void Widget::playMp3(){
+
+    if(!playEnable){
+        return;
+    }
+
+    /* 文件存在就播放 仅判断文件名 */
+    QString URL= defSavePath + curMusicName + "-" + curSonger + "." + curMType;
+    QFileInfo  fInfo(URL);
+    if(!fInfo.isFile()){
+        musicDb->delMusicByName(curMusicName + "-" + curSonger);
+        downM.downMp3(curDownUrl, curMusicName + "-" + curSonger, curMType);
+        return;
+    }
+
+    mPlayer = new QMediaPlayer();
+    /* player */
+    mPlayer->setMedia(QUrl::fromLocalFile(URL));
+    mPlayer->play();
 }
 
 void Widget::setClipboard (QString url){

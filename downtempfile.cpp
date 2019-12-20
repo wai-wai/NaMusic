@@ -44,7 +44,7 @@ void downTempFile::FinishedToSave(){
 }
 
 void downTempFile::testError(int error){
-    qDebug()<< "errno" << error <<":" << Downloader->getErrorString();
+    emit downError(error);
 }
 
 #if 0

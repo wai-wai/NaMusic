@@ -1,4 +1,4 @@
-QT       += core gui network multimedia
+QT       += core gui network multimedia sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -19,12 +19,14 @@ SOURCES += \
     down/urlop.cpp \
     downtempfile.cpp \
     main.cpp \
+    rwsqlite.cpp \
     searchm.cpp \
     widget.cpp
 
 HEADERS += \
     down/urlop.h \
     downtempfile.h \
+    rwsqlite.h \
     searchm.h \
     widget.h
 

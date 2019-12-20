@@ -15,6 +15,7 @@ public:
     void downMp3(QString url,QString musicName,QString  mtype);
 signals:
     void downFinish(QString namePath);
+    void downError(int error);
 private slots:
     void FinishedToSave();
     void testError(int);
