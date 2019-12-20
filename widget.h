@@ -110,7 +110,7 @@ private slots:
 
     /* 播放mp3 */
     QMediaPlayer    *mPlayer;
-
+    QPushButton     *tmpPlayBtn;
     rwSqlite     *musicDb;
 };
 #endif // WIDGET_H

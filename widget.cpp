@@ -40,6 +40,7 @@ Widget::Widget(QWidget *parent)
 */
     ui->nextWidget->hide();
     mPlayer = nullptr;
+    tmpPlayBtn = nullptr;
 }
 
 Widget::~Widget()
@@ -294,10 +295,20 @@ void Widget::clickDownBtn(){
 
 void Widget::playMusic(){
     static bool ok = false;
-
     QPushButton *senderObj = qobject_cast<QPushButton*>(sender());
     if(senderObj == nullptr) return;
+    senderObj->setEnabled(false);
     QModelIndex index = tabW->indexAt(QPoint(senderObj->frameGeometry().x(),senderObj->frameGeometry().y()));
+    /* 此处提前处理一下之前播放的btn */
+    if((tmpPlayBtn != nullptr) && (tmpPlayBtn != senderObj)){
+            if(ok == true){
+                tmpPlayBtn->setText("播放");
+                ok = false;
+                stopMp3();
+            }
+    }
+
+    tmpPlayBtn = senderObj;
 
     /* 播放按钮改 暂停 */
     if(ok == false){
@@ -320,9 +331,9 @@ void Widget::playMusic(){
     }else{
         stopMp3();
         senderObj->setText("播放");
-
         ok = false;
     }
+    senderObj->setEnabled(true);
 }
 
 void Widget::getDownLink(QByteArray data){
@@ -406,6 +417,7 @@ void Widget::downError(int){
 
 
 void Widget::stopMp3(){
+    if(mPlayer == nullptr) return;
     /* stop player */
     mPlayer->stop();
     delete  mPlayer;
@@ -456,11 +468,6 @@ int Widget::sumPos(int count){
 void Widget::on_nextBtn_clicked()
 {
     ui->nextBtn->setEnabled(false);
-    /*
-     *   ui->playBtn->hide();
-        ui->nextBtn->hide();
-        ui->lastBtn->hide();
-    */
     do {
         int countPage = sumPos(curCount);
         if(curPage == countPage){
