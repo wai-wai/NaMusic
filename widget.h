@@ -63,10 +63,12 @@ public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
 
-    void findhMusic(QString);
+    void findhMusic(QString, int pos);
+
 
 private:
     void showTab(QJsonArray, int row);
+    int sumPos(int count);
     void playMp3ByUrl(QString);
     void stopMp3();
     void playMp3();
@@ -82,7 +84,13 @@ private slots:
     void playMusic();
     void setClipboard (QString url);
 
-private:
+    void on_nextBtn_clicked();
+
+    void on_lastBtn_clicked();
+
+    void on_playBtn_clicked();
+
+    private:
     Ui::Widget *ui;
     searchM    findM;
     downTempFile    downM;
@@ -93,6 +101,8 @@ private:
     QString     curSonger;
     QString     curMType;
     QString     curDownUrl;
+    int         curCount;
+    int         curPage;
     bool        playEnable;
     QString     playUrl;
     int          maxLen;

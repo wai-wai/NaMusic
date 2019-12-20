@@ -26,7 +26,7 @@ class searchM : public QObject
 public:
     explicit searchM(QObject *parent = nullptr);
 
-    void findMusic(QString name);
+    void findMusic(QString name, int pos);
     void findDownLink(QString id, QString Quality);
 private:
 

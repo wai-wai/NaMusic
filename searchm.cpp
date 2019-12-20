@@ -5,12 +5,13 @@ searchM::searchM(QObject *parent) : QObject(parent)
 
 }
 
-void searchM::findMusic(QString name){
+void searchM::findMusic(QString name, int pos){
     /* http请求 获取json */
 /*
  * https://api.imjad.cn/cloudmusic/?type=search&search_type=1&limit=1024&s=水木年华&offset=0
 */
-    QString url = url0 + QUrl::toPercentEncoding(name) + url1;
+    QString url = url0 + QUrl::toPercentEncoding(name) + "&offset=" + QString::number(pos);
+
     setUrl(url);
     QByteArray json;
 

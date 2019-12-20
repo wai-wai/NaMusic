@@ -28,11 +28,17 @@ Widget::Widget(QWidget *parent)
     this->setAttribute(Qt::WA_StyledBackground);
     this->setStyleSheet("QWidget#Widget{border-image: url(:/new/prefix1/back.jpg);}");
 
-   /* 播放器 */
+    /* 播放器 */
     //mPlayer = new QMediaPlayer(this);
 
     /* 初始化 数据库 */
     musicDb = new rwSqlite(mDb,this);
+    curCount = 0;
+    /*    ui->playBtn->hide();
+    ui->nextBtn->hide();
+    ui->lastBtn->hide();
+*/
+    ui->nextWidget->hide();
 }
 
 Widget::~Widget()
@@ -43,11 +49,11 @@ Widget::~Widget()
 
 void Widget::on_search_clicked()
 {
-   QString error;
-   do{
+    QString error;
+    do{
         if(ui->musicName->text().isEmpty()){
-           error = QString("请输入歌曲名字或演唱者");
-           break;
+            error = QString("请输入歌曲名字或演唱者");
+            break;
         }
         if(ui->musicName->text().length() == 0 ){
             error = QString("请输入歌曲名字或演唱者");
@@ -55,16 +61,17 @@ void Widget::on_search_clicked()
         }
 
         /* 调用搜索歌曲 */
-       findhMusic(ui->musicName->text());
+        curPage = 1;
+        findhMusic(ui->musicName->text(),0);
 
-   }while(0);
+    }while(0);
 
 }
 
 
-void Widget::findhMusic(QString name){
+void Widget::findhMusic(QString name, int pos){
     //qDebug()<<QSslSocket::sslLibraryBuildVersionString();
-    findM.findMusic(name);
+    findM.findMusic(name,pos);
 }
 
 void Widget::getRData(QByteArray data){
@@ -88,7 +95,7 @@ void Widget::getRData(QByteArray data){
         QJsonObject rootObj = jsonDoc.object();
 
         if( !rootObj.contains("code") ){
-           break;
+            break;
         }
         if(200 != rootObj.value("code").toInt()){
             QMessageBox::information(this,"错误提示1:","获取失败!\n");
@@ -114,6 +121,8 @@ void Widget::getRData(QByteArray data){
             QMessageBox::information(this,"提示1:","未搜索到音乐!\n");
             break;
         }
+        curCount = songObj.value("songCount").toInt();
+        /* 默认一页100 */
         if(!songObj.contains("songs")){
             QMessageBox::information(this,"错误提示5:","获取失败!\n");
             break;
@@ -127,7 +136,6 @@ void Widget::getRData(QByteArray data){
         QJsonArray song = songArray.toArray();
 
         showTab(song, song.size());
-
     }while(0);
 }
 
@@ -138,12 +146,12 @@ void Widget::showTab(QJsonArray data,int row){
     /* 5列 */
     QStringList headList;
     headList<<"曲名"\
-            <<"演唱"\
-            <<"时间"\
-            <<"音质 | 大小"\
-            <<"试听"\
-            <<"下载" \
-           <<"id";
+           <<"演唱"\
+          <<"时间"\
+         <<"音质 | 大小"\
+        <<"试听"\
+       <<"下载" \
+      <<"id";
     maxLen = headList.length();
     tabW->setColumnCount(headList.length());
     tabW->setRowCount(row);
@@ -195,10 +203,10 @@ void Widget::showTab(QJsonArray data,int row){
 
         /* 提取时常 */
         QTableWidgetItem *dtIteam = new QTableWidgetItem();
-         dtIteam->setFlags(Qt::NoItemFlags);
-         QString timeStr;
-         QTime time = QTime::fromMSecsSinceStartOfDay(data.at(i).toObject().value("dt").toInt());
-         timeStr = time.toString("mm:ss");
+        dtIteam->setFlags(Qt::NoItemFlags);
+        QString timeStr;
+        QTime time = QTime::fromMSecsSinceStartOfDay(data.at(i).toObject().value("dt").toInt());
+        timeStr = time.toString("mm:ss");
 
         dtIteam->setText(timeStr);
         tabW->setItem(i,2,dtIteam);
@@ -212,7 +220,7 @@ void Widget::showTab(QJsonArray data,int row){
             sizeM = float(data.at(i).toObject().value("h").toObject().value("size").toInt()/1024);
             sizeM /= 1024;
             info = QString::number(data.at(i).toObject().value("h").toObject().value("br").toInt()) +" | " + \
-                    QString::number(sizeM);
+                   QString::number(sizeM);
             list<< info;
         }
 
@@ -221,7 +229,7 @@ void Widget::showTab(QJsonArray data,int row){
             sizeM = float(data.at(i).toObject().value("m").toObject().value("size").toInt()/1024);
             sizeM /= 1024;
             info = QString::number(data.at(i).toObject().value("m").toObject().value("br").toInt()) +" | " + \
-                    QString::number(sizeM);
+                   QString::number(sizeM);
             list<< info;
 
         }
@@ -230,7 +238,7 @@ void Widget::showTab(QJsonArray data,int row){
             sizeM = float(data.at(i).toObject().value("m").toObject().value("size").toInt()/1024);
             sizeM /= 1024;
             info = QString::number(data.at(i).toObject().value("m").toObject().value("br").toInt()) +" | " + \
-                    QString::number(sizeM);
+                   QString::number(sizeM);
             list<< info;
         }
 
@@ -248,12 +256,16 @@ void Widget::showTab(QJsonArray data,int row){
         tabW->setCellWidget(i, maxLen-2, donwBtn);
 
         QTableWidgetItem *idIteam = new QTableWidgetItem();
-         idIteam->setFlags(Qt::NoItemFlags);
+        idIteam->setFlags(Qt::NoItemFlags);
         idIteam->setText(QString::number(data.at(i).toObject().value("id").toInt()));
         tabW->setItem(i,headList.length()-1,idIteam);
     }
 
     tabW->show();
+    ui->curPage->setText(QString::number(curPage));
+    ui->countPage->setText(QString::number( sumPos(curCount)));
+
+    ui->nextWidget->show();
 }
 
 void Widget::clickDownBtn(){
@@ -263,7 +275,7 @@ void Widget::clickDownBtn(){
 
     /* 通过索引 获取对应的 */
     //tabW->indexWidget(index);
-   //tabW->cellWidget()
+    //tabW->cellWidget()
     QComboBox *curBox = qobject_cast<QComboBox* > (tabW->cellWidget(index.row(),3));
     /* 取出音质 */
     QString  pStr = curBox->currentText().trimmed().simplified().split("|").at(0);
@@ -351,31 +363,31 @@ void Widget::getDownLink(QByteArray data){
             QMessageBox::information(this,"getDownLink,错误提示3:","获取失败!\n");
             break;
         }
-         QJsonArray rootArray = rootObj.value("data").toArray();
+        QJsonArray rootArray = rootObj.value("data").toArray();
 
-         if(rootArray.count() == 0){
-             QMessageBox::information(this,"getDownLink,提示4:","获取失败!\n");
-             break;
-         }
-         curDownUrl = rootArray.at(0).toObject().value("url").toString();
-         curMType = rootArray.at(0).toObject().value("type").toString();
-         currentMd5 = rootArray.at(0).toObject().value("md5").toString();
+        if(rootArray.count() == 0){
+            QMessageBox::information(this,"getDownLink,提示4:","获取失败!\n");
+            break;
+        }
+        curDownUrl = rootArray.at(0).toObject().value("url").toString();
+        curMType = rootArray.at(0).toObject().value("type").toString();
+        currentMd5 = rootArray.at(0).toObject().value("md5").toString();
 
-         curDownUrl += ("?filename=" + QUrl::toPercentEncoding(curMusicName) + "&downloadtype=" + curMType);
+        curDownUrl += ("?filename=" + QUrl::toPercentEncoding(curMusicName) + "&downloadtype=" + curMType);
 
-         if(BtnNum == 1){
-             setClipboard(curDownUrl);
-         }else if(BtnNum == 0){
-             /* 启动播放器试听 */
-             /* 播放rul */
-             /* 需要添加md5判断以后在进行下载 */
+        if(BtnNum == 1){
+            setClipboard(curDownUrl);
+        }else if(BtnNum == 0){
+            /* 启动播放器试听 */
+            /* 播放rul */
+            /* 需要添加md5判断以后在进行下载 */
             if(musicDb->findMd5(currentMd5, curMusicName + "-" + curSonger)){
                 playEnable = true;
                 playMp3();
                 break;
             }
             downM.downMp3(curDownUrl, curMusicName + "-" + curSonger, curMType);
-         }
+        }
         /* 发送给下载线程 */
     }while(0);
 }
@@ -397,6 +409,7 @@ void Widget::stopMp3(){
     mPlayer->stop();
     delete  mPlayer;
     playEnable = false;
+    ui->playBtn->setText("播放");
 }
 
 void Widget::playMp3(){
@@ -404,7 +417,6 @@ void Widget::playMp3(){
     if(!playEnable){
         return;
     }
-
     /* 文件存在就播放 仅判断文件名 */
     QString URL= defSavePath + curMusicName + "-" + curSonger + "." + curMType;
     QFileInfo  fInfo(URL);
@@ -418,6 +430,7 @@ void Widget::playMp3(){
     /* player */
     mPlayer->setMedia(QUrl::fromLocalFile(URL));
     mPlayer->play();
+    ui->playBtn->setText("暂停");
 }
 
 void Widget::setClipboard (QString url){
@@ -425,6 +438,79 @@ void Widget::setClipboard (QString url){
     clicpboard->setText(url);
 }
 
+int Widget::sumPos(int count){
+    int ret = 0;
+
+    if(count%100){
+        ret = (int)(count/100) +1;
+    }else{
+        ret = (int)(count/100);
+    }
+    return ret;
+}
 
 
+/* 下一页 */
+void Widget::on_nextBtn_clicked()
+{
+    ui->nextBtn->setEnabled(false);
+    /*
+     *   ui->playBtn->hide();
+        ui->nextBtn->hide();
+        ui->lastBtn->hide();
+    */
+    do {
+        int countPage = sumPos(curCount);
+        if(curPage == countPage){
+            break;
+        }
 
+        if(ui->musicName->text().isEmpty()){
+            break;
+        }
+        if(ui->musicName->text().length() == 0 ){
+            break;
+        }
+        curPage++;
+        /* 调用搜索歌曲 */
+        findhMusic(ui->musicName->text(),(int)((curPage-1)*100));
+    } while (0);
+    ui->nextBtn->setEnabled(true);
+}
+
+/*上一页 */
+void Widget::on_lastBtn_clicked()
+{
+    ui->lastBtn->setEnabled(false);
+    /*
+     *   ui->playBtn->hide();
+        ui->nextBtn->hide();
+        ui->lastBtn->hide();
+    */
+    do{
+        if(curPage == 1){
+            break;
+        }
+        if(ui->musicName->text().isEmpty()){
+            break;
+        }
+        if(ui->musicName->text().length() == 0 ){
+            break;
+        }
+        curPage--;
+        /* 调用搜索歌曲 */
+        findhMusic(ui->musicName->text(),(curPage == 1)?(0):((curPage-1)*100));
+
+    }while(0);
+    ui->lastBtn->setEnabled(true);
+}
+
+/* 播放暂停公用 */
+void Widget::on_playBtn_clicked()
+{
+    /* stop player */
+    mPlayer->stop();
+    delete  mPlayer;
+    playEnable = false;
+    ui->playBtn->setText("播放");
+}
